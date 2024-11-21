@@ -17,26 +17,20 @@
 
 package com.alibaba.cloud.ai.plugin;
 
-import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Description;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
-/**
- * @author: Yeaury
- **/
-@AutoConfiguration
-@ConditionalOnClass(GetWeatherService.class)
-@EnableConfigurationProperties(WeatherProperties.class)
-public class WeatherServiceAutoConfiguration {
+@ConfigurationProperties(prefix = "spring.ai.alibaba.plugin.weather")
+public class WeatherProperties {
 
-    @Bean
-    @ConditionalOnMissingBean
-    @Description("TOOLS FOR GETTING WEATHER INFORMATION")
-    public GetWeatherService getWeatherService(WeatherProperties properties) {
-        return new GetWeatherService(properties);
+    // API key for the weather service.
+    private String apiKey;
+
+    public String getApiKey() {
+        return apiKey;
     }
 
+    public void setApiKey(String apiKey) {
+        this.apiKey = apiKey;
+    }
 }

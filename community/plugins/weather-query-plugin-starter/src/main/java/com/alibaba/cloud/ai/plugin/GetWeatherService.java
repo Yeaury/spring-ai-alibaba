@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -46,18 +47,17 @@ public class GetWeatherService
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Value("${spring.ai.alibaba.plugin.weather.api-key}")
-    private String apiKey;
 
-    public GetWeatherService() {
+    public GetWeatherService(WeatherProperties properties) {
         this.webClient = WebClient.builder()
                 .defaultHeader(HttpHeaders.USER_AGENT,
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+                        HttpHeaders.USER_AGENT) // 可以通过 Spring 中常量管理用户代理
                 .defaultHeader(HttpHeaders.ACCEPT,
-                        "application/json, text/plain, */*")
+                        MediaType.APPLICATION_JSON_VALUE)
                 .defaultHeader(HttpHeaders.ACCEPT_ENCODING, "gzip, deflate")
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .defaultHeader(HttpHeaders.ACCEPT_LANGUAGE, "zh-CN,zh;q=0.9,ja;q=0.8")
+                .defaultHeader("key", properties.getApiKey())
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(5 * 1024 * 1024))
                 .build();
     }
@@ -69,7 +69,6 @@ public class GetWeatherService
         }
 
         String url = UriComponentsBuilder.fromHttpUrl(WEATHER_API_URL)
-                .queryParam("key", apiKey)
                 .queryParam("q", request.city())
                 .queryParam("dt", request.date() == null ? "" : request.date())
                 .toUriString();

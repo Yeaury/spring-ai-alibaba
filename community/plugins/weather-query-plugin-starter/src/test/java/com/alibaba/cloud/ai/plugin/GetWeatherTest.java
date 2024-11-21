@@ -18,17 +18,19 @@ public class GetWeatherTest {
 
 
     private GetWeatherService getWeatherService;
+
     @BeforeEach
     public void setUp() {
-        getWeatherService = new GetWeatherService();
+        WeatherProperties properties = new WeatherProperties();
+        properties.setApiKey("API_KEY");
+        getWeatherService = new GetWeatherService(properties);
     }
 
     @Test
     public void testSearch() {
         GetWeatherService.Request request = new GetWeatherService.Request("beijing", null);
         GetWeatherService.Response response = getWeatherService.apply(request);
-
-        System.out.println(response);
+        assertNotNull(response);
 
     }
 }
