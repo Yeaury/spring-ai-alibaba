@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 package com.alibaba.cloud.ai.example.functioncalling;
-
 import com.alibaba.cloud.ai.example.functioncalling.function.MockWeatherService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -65,6 +64,15 @@ public class FunctionCallingController {
 		return chatClient.prompt()
 				.functions("getCityTimeFunction")
 				.user(text)
+				.call()
+				.content();
+	}
+
+	@GetMapping("/getWeather")
+	public String getWeather(String subject) {
+		return chatClient.prompt()
+				.functions("getWeatherService")
+				.user(subject)
 				.call()
 				.content();
 	}

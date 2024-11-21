@@ -5,3 +5,7 @@ spring:
   ai:
     dashscope:
       api-key: ${AI_DASHSCOPE_API_KEY}
+    alibaba:
+      plugin:
+        weather:
+          api-key: ${AI_WEATHER_API_KEY}

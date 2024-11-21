@@ -1,0 +1,6 @@
+spring:
+  ai:
+    alibaba:
+      plugin:
+        weather:
+            api-key: ${AI_WEATHER_API_KEY}
