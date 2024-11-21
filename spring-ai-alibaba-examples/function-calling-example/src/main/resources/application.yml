@@ -9,3 +9,4 @@ spring:
       plugin:
         weather:
           api-key: ${AI_WEATHER_API_KEY}
+
