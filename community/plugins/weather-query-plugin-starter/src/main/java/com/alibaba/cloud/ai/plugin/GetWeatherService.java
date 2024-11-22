@@ -17,6 +17,7 @@
 
 package com.alibaba.cloud.ai.plugin;
 
+import cn.hutool.extra.pinyin.PinyinUtil;
 import com.fasterxml.jackson.annotation.JsonClassDescription;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -25,7 +26,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
@@ -67,10 +67,9 @@ public class GetWeatherService
             logger.error("Invalid request: city is required.");
             return null;
         }
-
+        String location = preprocessLocation(request.city());
         String url = UriComponentsBuilder.fromHttpUrl(WEATHER_API_URL)
-                .queryParam("q", request.city())
-                .queryParam("dt", request.date() == null ? "" : request.date())
+                .queryParam("q", location)
                 .toUriString();
 
         try {
@@ -87,6 +86,18 @@ public class GetWeatherService
             logger.error("Failed to fetch weather data: {}", e.getMessage());
             return null;
         }
+    }
+
+    // Use the tools in hutool to convert Chinese place names into pinyin
+    private String preprocessLocation(String location) {
+        if (containsChinese(location)) {
+            return PinyinUtil.getPinyin(location, "");
+        }
+        return location;
+    }
+
+    private boolean containsChinese(String str) {
+        return str.matches(".*[\u4e00-\u9fa5].*");
     }
 
 
@@ -108,9 +119,7 @@ public class GetWeatherService
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonClassDescription("Weather Service API request")
     public record Request(
-            @JsonProperty(required = true, value = "city") @JsonPropertyDescription("THE CITY OF INQUIRY") String city,
-            @JsonProperty(required = true, value = "data") @JsonPropertyDescription("THE TIME OF THE QUERY") String date
-
+            @JsonProperty(required = true, value = "city") @JsonPropertyDescription("THE CITY OF INQUIRY") String city
     ){}
 
 
