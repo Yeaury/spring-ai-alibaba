@@ -33,6 +33,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -41,7 +42,7 @@ public class GetWeatherService
 
     private static final Logger logger = LoggerFactory.getLogger(GetWeatherService.class);
 
-    private static final String WEATHER_API_URL = "https://api.weatherapi.com/v1/current.json";
+    private static final String WEATHER_API_URL = "https://api.weatherapi.com/v1/forecast.json";
 
     private final WebClient webClient;
 
@@ -70,6 +71,7 @@ public class GetWeatherService
         String location = preprocessLocation(request.city());
         String url = UriComponentsBuilder.fromHttpUrl(WEATHER_API_URL)
                 .queryParam("q", location)
+                .queryParam("days", request.days())
                 .toUriString();
 
         try {
@@ -104,35 +106,24 @@ public class GetWeatherService
     public static Response fromJson(Map<String, Object> json) {
         Map<String, Object> location = (Map<String, Object>) json.get("location");
         Map<String, Object> current = (Map<String, Object>) json.get("current");
-
+        Map<String, Object> forecast = (Map<String, Object>) json.get("forecast");
+        List<Map<String, Object>> forecastDays = (List<Map<String, Object>>) forecast.get("forecastday");
         String city = (String) location.get("name");
-        String temperature = String.valueOf(current.get("temp_c"));
-        Map<String, Object> condition = (Map<String, Object>) current.get("condition");
-        String conditionText = (String) condition.get("text");
-        String humidity = current.containsKey("humidity") ? String.valueOf(current.get("humidity")) : null;
-        String windSpeed = current.containsKey("wind_kph") ? String.valueOf(current.get("wind_kph")) : null;
-
-        return new Response(city, temperature, conditionText, humidity, windSpeed);
+        return new Response(city, current, forecastDays);
     }
 
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonClassDescription("Weather Service API request")
     public record Request(
-            @JsonProperty(required = true, value = "city") @JsonPropertyDescription("THE CITY OF INQUIRY") String city
+            @JsonProperty(required = true, value = "city") @JsonPropertyDescription("THE CITY OF INQUIRY") String city,
+
+            @JsonProperty(required = false, value = "days") @JsonPropertyDescription("The number of days for which the weather is forecasted") int days
     ){}
 
 
     @JsonClassDescription("Weather Service API response")
     public record Response(
-            @JsonProperty(required = true, value = "city") @JsonPropertyDescription("The name of the city for the weather report") String city,
-
-            @JsonProperty(required = true, value = "temperature") @JsonPropertyDescription("Current temperature in the city, measured in Celsius") String temperature,
-
-            @JsonProperty(required = true, value = "condition") @JsonPropertyDescription("Current weather condition description, e.g., 'Cloudy', 'Sunny'") String condition,
-
-            @JsonProperty(required = false, value = "humidity") @JsonPropertyDescription("Current humidity percentage in the city") String humidity,
-
-            @JsonProperty(required = false, value = "windSpeed") @JsonPropertyDescription("Wind speed in the city, measured in km/h") String windSpeed
+            String city, Map<String, Object> current, List<Map<String, Object>> forecastDays
     ) {}
 }

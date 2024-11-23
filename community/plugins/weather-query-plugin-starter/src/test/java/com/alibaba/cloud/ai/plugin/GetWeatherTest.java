@@ -43,7 +43,7 @@ public class GetWeatherTest {
 
     @Test
     public void testSearch() {
-        GetWeatherService.Request request = new GetWeatherService.Request("beijing");
+        GetWeatherService.Request request = new GetWeatherService.Request("beijing", 0);
         GetWeatherService.Response response = getWeatherService.apply(request);
         assertNotNull(response);
 
