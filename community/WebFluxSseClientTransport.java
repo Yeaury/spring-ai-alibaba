@@ -36,7 +36,6 @@ public class WebFluxSseClientTransport implements ClientMcpTransport {
 
     private static final String MESSAGE_EVENT_TYPE = "message";
     private static final String ENDPOINT_EVENT_TYPE = "endpoint";
-    private static final String SESSION_EVENT_TYPE = "session";
     private static final String MESSAGE_ENDPOINT = "/message";
     private static final String PROTOCOL_VERSION = "2025-03-26";
 
@@ -264,17 +263,6 @@ public class WebFluxSseClientTransport implements ClientMcpTransport {
                 .accept(MediaType.TEXT_EVENT_STREAM)
                 .retrieve()
                 .bodyToFlux(SSE_TYPE)
-                .doOnNext(event -> {
-                    if (SESSION_EVENT_TYPE.equals(event.event())) {
-                        String newSessionId = event.data();
-                        if (newSessionId != null && !newSessionId.trim().isEmpty()) {
-                            sessionId.set(newSessionId);
-                            logger.debug("Received sessionId from SSE event: {}", newSessionId);
-                        } else {
-                            logger.debug("Received empty or invalid sessionId in SSE event");
-                        }
-                    }
-                })
                 .retryWhen(Retry.from(retrySignal -> retrySignal.handle(inboundRetryHandler)));
 
         getSseFlux.subscribe(sseSink::tryEmitNext);
