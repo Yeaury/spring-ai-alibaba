@@ -43,9 +43,13 @@ public class WebFluxSseClientTransport implements ClientMcpTransport {
     };
 
     private final WebClient webClient;
+
     private final ObjectMapper objectMapper;
+
     private Disposable inboundSubscription;
+
     private volatile boolean isClosing = false;
+
     private final Sinks.One<String> messageEndpointSink = Sinks.one();
 
     private final Sinks.Many<ServerSentEvent<String>> sseSink = Sinks.many().multicast().onBackpressureBuffer();
@@ -306,5 +310,29 @@ public class WebFluxSseClientTransport implements ClientMcpTransport {
     @Override
     public <T> T unmarshalFrom(Object data, TypeReference<T> typeRef) {
         return this.objectMapper.convertValue(data, typeRef);
+    }
+
+
+    public static class Builder {
+
+        private final WebClient.Builder webClientBuilder;
+
+        private ObjectMapper objectMapper = new ObjectMapper();
+
+        public Builder(WebClient.Builder webClientBuilder) {
+            Assert.notNull(webClientBuilder, "WebClient.Builder must not be null");
+            this.webClientBuilder = webClientBuilder;
+        }
+
+        public Builder objectMapper(ObjectMapper objectMapper) {
+            Assert.notNull(objectMapper, "objectMapper must not be null");
+            this.objectMapper = objectMapper;
+            return this;
+        }
+
+        public WebFluxSseClientTransport build() {
+            return new WebFluxSseClientTransport(webClientBuilder, objectMapper);
+        }
+
     }
 }
