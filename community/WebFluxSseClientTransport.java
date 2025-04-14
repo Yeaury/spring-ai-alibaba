@@ -99,7 +99,8 @@ public class WebFluxSseClientTransport implements ClientMcpTransport {
                     }
                 })
                 .retryWhen(Retry.backoff(3, Duration.ofSeconds(3))
-                        .filter(err -> err instanceof IOException || err instanceof McpError))
+                        .filter(err -> err instanceof IOException || err instanceof McpError)
+                        .doAfterRetry(signal -> logger.debug("Retrying connection attempt: {}", signal.totalRetries())))
                 .doOnSuccess(v -> logger.debug("Connection established"))
                 .doOnError(e -> logger.error("Failed to connect", e))
                 .onErrorResume(e -> {
@@ -140,7 +141,11 @@ public class WebFluxSseClientTransport implements ClientMcpTransport {
                 .flatMap(jsonLine -> {
                     try {
                         JSONRPCMessage message = McpSchema.deserializeJsonRpcMessage(objectMapper, jsonLine);
-                        return handler.apply(Mono.just(message));
+                        return handler.apply(Mono.just(message))
+                                .onErrorResume(e -> {
+                                    logger.error("Error processing message", e);
+                                    return Mono.error(e);
+                                });
                     } catch (IOException e) {
                         logger.error("Error processing JSON-seq line: {}", jsonLine, e);
                         return Mono.empty();
@@ -288,14 +293,14 @@ public class WebFluxSseClientTransport implements ClientMcpTransport {
     @Override
     public Mono<Void> closeGracefully() {
         return Mono.fromRunnable(() -> {
-                    isClosing = true;
-                    sessionId.set(null);
-                    if (inboundSubscription != null) {
-                        inboundSubscription.dispose();
-                    }
-                })
-                .then()
-                .subscribeOn(Schedulers.boundedElastic());
+            this.isClosing = true;
+            this.sessionId.set(null);
+            if (this.inboundSubscription != null) {
+                this.inboundSubscription.dispose();
+            }
+            this.sseSink.tryEmitComplete();
+
+        }).then().subscribeOn(Schedulers.boundedElastic());
     }
 
     @Override
